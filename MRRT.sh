@@ -124,16 +124,68 @@ draw_boot_menu() {
     echo -e "${BLUE}╚══════════════════════════════════════╝${NC}"
     echo -ne "${YELLOW}Select option [1-4]: ${NC}"
 }
+
+# ================= SLOT DETECTION =================
+get_slot_suffix() {
+    slot=$(termux-fastboot getvar current-slot 2>&1 | grep -o '[ab]')
+    if [ -n "$slot" ]; then
+        echo "_$slot"
+    else
+        echo ""
+    fi
+}
+
+# ================= ASK VBMETA =================
+ask_flash_vbmeta() {
+    echo
+    read -p "Do you want to flash vbmeta? (y/n): " ans
+    case "$ans" in
+        y|Y) auto_flash_vbmeta ;;
+        *) echo -e "${YELLOW}Skipping vbmeta...${NC}" ; sleep 1 ;;
+    esac
+}
+
+auto_flash_vbmeta() {
+    wait_fastboot || return
+
+    read -p "Enter vbmeta image path: " vb
+    [ ! -f "$vb" ] && echo -e "${RED}Vbmeta file not found!${NC}" && pause && return
+
+    suffix=$(get_slot_suffix)
+
+    echo -e "${CYAN}Flashing vbmeta${suffix}${NC}"
+    progress_bar
+
+    if termux-fastboot getvar all 2>&1 | grep -q "vbmeta${suffix}"; then
+        termux-fastboot flash --disable-verity --disable-verification vbmeta${suffix} "$vb"
+    else
+        termux-fastboot flash --disable-verity --disable-verification vbmeta "$vb"
+    fi
+
+    pause
+}
 # ================= FLASH =================
 flash_partition() {
     part=$1
     wait_fastboot || return
-    echo -ne "${GREEN}Enter image path: ${NC}"
-    read img
+
+    read -p "Enter image path: " img
     [ ! -f "$img" ] && echo -e "${RED}File not found${NC}" && pause && return
+
+    suffix=$(get_slot_suffix)
+    target="${part}${suffix}"
+
+    echo -e "${CYAN}Flashing ${target}${NC}"
     progress_bar
-    termux-fastboot flash "$part" "$img"
-    pause
+
+    if termux-fastboot getvar all 2>&1 | grep -q "$target"; then
+        termux-fastboot flash "$target" "$img"
+    else
+        termux-fastboot flash "$part" "$img"
+    fi
+
+    # 🔥 ASK FOR VBMETA AFTER BOOT FLASH
+    ask_flash_vbmeta
 }
 
 boot_flash_menu() {
