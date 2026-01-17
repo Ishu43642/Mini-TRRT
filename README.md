@@ -41,9 +41,9 @@ chmod -R +x .
 
 
 # Tool Feature 
-1. 💿 one click boot.img install 
+1. 💿 one click boot.img magisk_patch_boot install 
 
-2. ⬇️ Sideload rom
+2. ⬇️ Sideload root/recovery/rom
 
 3. 🔗 Flash VBmeta Disable avb warning 
 
