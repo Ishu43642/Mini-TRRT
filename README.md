@@ -14,10 +14,10 @@ Mini Version Of Termux Root Recovery Tool With Batter Usb Connectivity & easy to
 
 
 ```console
-yes | pkg update && upgrade
+pkg update && upgrade -y
 ```
 ```console
-yes | pkg install git
+pkg install -y git
 ```
 
 # clone tool to termux :-
