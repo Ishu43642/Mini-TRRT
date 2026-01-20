@@ -41,10 +41,14 @@ chmod -R +x .
 
 
 # Tool Feature 
-1. 💿 one click boot.img magisk_patch_boot install 
+1. 💿 one click boot.img init_boit vendor_boit recovery.img magisk_patch_boot install 
 
 2. ⬇️ Sideload root/recovery/rom
 
 3. 🔗 Flash VBmeta Disable avb warning 
 
-4. Automatic A/B partition detection 
+4. ♻️ Automatic A/B partition detection & Flash in both partition 
+
+5. 🚀 Direct Boot to custom boot & custom recovery without flashing
+
+6. ⚙️ Full Functional No Need Commond type
