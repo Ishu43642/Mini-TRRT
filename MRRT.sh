@@ -169,6 +169,60 @@ flash_vbmeta_slot() {
     termux-fastboot flash --disable-verity --disable-verification "vbmeta_${slot}" "$vb"
 }
 
+flash_recovery_smart() {
+    wait_fastboot || return
+
+    read -p "Enter recovery image path: " img
+    if [ ! -f "$img" ]; then
+        echo -e "${RED}Recovery image not found!${NC}"
+        pause
+        return
+    fi
+
+    # ---------- SINGLE SLOT ----------
+    if ! is_ab_device; then
+        echo -e "${YELLOW}Single-slot (A-only) device detected${NC}"
+        progress_bar
+        termux-fastboot flash recovery "$img"
+
+        if ask_yes_no "Flash vbmeta?"; then
+            flash_vbmeta_smart
+        fi
+
+        pause
+        return
+    fi
+
+    # ---------- A/B DEVICE ----------
+    local active=$(get_active_slot)
+    local inactive=$(get_inactive_slot)
+
+    echo -e "${GREEN}A/B device detected${NC}"
+    echo -e "${CYAN}Active slot  : $active${NC}"
+    echo -e "${CYAN}Inactive slot: $inactive${NC}"
+
+    # Flash active slot
+    progress_bar
+    termux-fastboot flash "recovery_${active}" "$img"
+
+    # Ask inactive slot
+    if ask_yes_no "Flash recovery to INACTIVE slot?"; then
+        progress_bar
+        termux-fastboot flash "recovery_${inactive}" "$img"
+    fi
+
+    # vbmeta active
+    if ask_yes_no "Flash vbmeta to ACTIVE slot?"; then
+        flash_vbmeta_slot "$active"
+    fi
+
+    # vbmeta inactive
+    if ask_yes_no "Flash vbmeta to INACTIVE slot?"; then
+        flash_vbmeta_slot "$inactive"
+    fi
+
+    pause
+}
 # ================= SMART FLASH =================
 flash_partition_smart() {
     local part="$1"
@@ -250,11 +304,12 @@ echo -e "${BLUE}╔════════════════════�
     echo -e "${BLUE}║${NC} MODE : $(connection_type)                 ${BLUE}║${NC}"
     echo -e "${BLUE}╠══════════════════════════════════════╣${NC}"
     echo -e "${BLUE}║${NC} ${GREEN}1. Flash Boot / Init / Vendor Boot  ${NC} ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC} ${GREEN}2. Flash Vbmeta ${NC}                     ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC} ${GREEN}3. Direct Boot ${NC}                      ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC} ${GREEN}4. ADB ZIP Sideload ${NC}                 ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC} ${GREEN}5. Reboot Options ${NC}                   ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC} ${RED}6. Exit ${NC}                             ${BLUE}║${NC}"
+    echo -e "${BLUE}║${NC} ${GREEN}2. Flash Recovery ${NC}                   ${BLUE}║${NC}"
+    echo -e "${BLUE}║${NC} ${GREEN}3. Flash Vbmeta ${NC}                     ${BLUE}║${NC}"
+    echo -e "${BLUE}║${NC} ${GREEN}4. Direct Boot ${NC}                      ${BLUE}║${NC}"
+    echo -e "${BLUE}║${NC} ${GREEN}5. ADB ZIP Sideload ${NC}                 ${BLUE}║${NC}"
+    echo -e "${BLUE}║${NC} ${GREEN}6. Reboot Options ${NC}                   ${BLUE}║${NC}"
+    echo -e "${BLUE}║${NC} ${RED}7. Exit ${NC}                             ${BLUE}║${NC}"
     echo -e "${BLUE}╚══════════════════════════════════════╝${NC}"
 }
 
@@ -341,10 +396,11 @@ while true; do
     read -p "Select option: " ch
     case $ch in
         1) boot_flash_menu ;;
-        2) flash_vbmeta_smart ;;
-        3) wait_fastboot && read -p "Image path: " img && termux-fastboot boot "$img" && pause ;;
-        4) adb_sideload_zip ;;
-        5) reboot_menu ;;
-        6) exit 0 ;;
+        2) flash_recovery_smart ;;
+        3) flash_vbmeta_smart ;;
+        4) wait_fastboot && read -p "Image path: " img && termux-fastboot boot "$img" && pause ;;
+        5) adb_sideload_zip ;;
+        6) reboot_menu ;;
+        7) exit 0 ;;
     esac
 done
