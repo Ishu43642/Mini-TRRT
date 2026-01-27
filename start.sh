@@ -81,6 +81,6 @@ printf "%s\n" "┃  Instagram    : dineshpatel43642             ┃"
 printf "%s\n" "┃  Telegram     : RepairA2Z / group            ┃"
 printf "%s\n" "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛${RESET}"
 
-sleep 2
+sleep 1
 
 ./MRRT.sh
